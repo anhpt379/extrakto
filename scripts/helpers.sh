@@ -54,6 +54,10 @@ get_option() {
             echo $(get_tmux_option $option "tab")
             ;;
 
+        "@extrakto_run_key")
+            echo $(get_tmux_option $option "ctrl-r")
+            ;;
+
         "@extrakto_filter_key")
             echo $(get_tmux_option $option "ctrl-f")
             ;;
@@ -185,3 +189,4 @@ get_next_mode() {
         echo ${next_mode[$next]}
     fi
 }
+

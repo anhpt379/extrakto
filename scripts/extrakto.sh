@@ -37,6 +37,7 @@ clip_tool_run=$(get_option "@extrakto_clip_tool_run")
 fzf_tool=$(get_option "@extrakto_fzf_tool")
 open_tool=$(get_option "@extrakto_open_tool")
 copy_key=$(get_option "@extrakto_copy_key")
+run_key=$(get_option "@extrakto_run_key")
 insert_key=$(get_option "@extrakto_insert_key")
 filter_key=$(get_option "@extrakto_filter_key")
 open_key=$(get_option "@extrakto_open_key")
@@ -142,6 +143,7 @@ capture() {
     mode=$(get_next_mode "initial")
 
     header_tmpl="${COLORS[BOLD]}${insert_key}${COLORS[OFF]}=insert"
+    header_tmpl+=", ${COLORS[BOLD]}${run_key}${COLORS[OFF]}=run"
     header_tmpl+=", ${COLORS[BOLD]}${copy_key}${COLORS[OFF]}=copy"
     [[ -n "$open_tool" ]] && header_tmpl+=", ${COLORS[BOLD]}${open_key}${COLORS[OFF]}=open"
     header_tmpl+=", ${COLORS[BOLD]}${edit_key}${COLORS[OFF]}=edit"
@@ -173,7 +175,7 @@ capture() {
                 --print-query \
                 --query="$query" \
                 --header="$header" \
-                --expect=${insert_key},${copy_key},${filter_key},${edit_key},${open_key},${grab_key},${help_key},ctrl-c,esc \
+                --expect=${insert_key},${run_key},${copy_key},${filter_key},${edit_key},${open_key},${grab_key},${help_key},ctrl-c,esc \
                 --tiebreak=index \
                 --layout="$fzf_layout" \
                 --no-info)"
@@ -204,6 +206,13 @@ capture() {
         case "$key" in
             "${copy_key}")
                 copy "$text"
+                return 0
+                ;;
+
+            "${run_key}")
+                tmux set-buffer -- "$text"
+                tmux paste-buffer -p -t $trigger_pane
+                tmux send-keys Enter
                 return 0
                 ;;
 
@@ -292,3 +301,4 @@ if [[ $launch_mode != popup ]]; then
 fi
 
 capture
+
