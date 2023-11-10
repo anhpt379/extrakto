@@ -3,6 +3,7 @@
 import os
 import re
 import sys
+import traceback
 
 from argparse import ArgumentParser
 from collections import OrderedDict
@@ -23,6 +24,10 @@ SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 RE_WORD = "[^][(){}=$\u2500-\u27BF\uE000-\uF8FF \\t\\n\\r]+"
 
 
+class ExtraktoException(Exception):
+    pass
+
+
 class Extrakto:
     def __init__(self, *, min_length=5, alt=False, prefix_name=False):
         conf = ConfigParser(interpolation=None)
@@ -33,8 +38,9 @@ class Extrakto:
 
         conf.read([default_conf, user_conf])
         sections = conf.sections()
+
         if not "path" in sections or not "url" in sections:
-            raise Exception("extrakto.conf incomplete")
+            raise ExtraktoException("extrakto.conf incomplete, path and url must exist")
 
         self.min_length = min_length
         self.alt = alt
@@ -42,11 +48,14 @@ class Extrakto:
 
         self.in_all = []
         self.fdict = {}
+
         for name in sections:
             sect = conf[name]
             alt = []
             for i in range(2, 10):
                 key = f"alt{i}"
+
+                # if alt2, alt{n} exists as a value in a section, create a variant based on that regex
                 if key in sect:
                     alt.append(sect[key])
 
@@ -65,6 +74,8 @@ class Extrakto:
                 )
 
     def __getitem__(self, key):
+        if not key in self.fdict:
+            raise ExtraktoException(f"Unknown filter {key}")
         return self.fdict[key]
 
     def all(self):
@@ -206,4 +217,11 @@ if __name__ == "__main__":
         "--warn-empty", action="store_true", help="warn if result is empty"
     )
 
-    main(parser)
+    try:
+        main(parser)
+    except ExtraktoException as e:
+        print(e, file=sys.stderr)
+        sys.exit(1)
+    except Exception as e:
+        print(traceback.format_exc(), file=sys.stderr)
+        sys.exit(1)
